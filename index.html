@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Para mi Eimy ❤️</title>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root { --sz: 180px; }
+@media(max-width: 600px) { :root { --sz: 140px; } }
+
+body { 
+  margin: 0; padding: 0; overflow: hidden; background: radial-gradient(circle at center, #1a1a2e, #050510); 
+  font-family: 'Playfair Display', serif; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.scene { width: 100vw; height: 100vh; perspective: 1500px; display: flex; justify-content: center; align-items: center; }
+.camera { position: absolute; transform-style: preserve-3d; transition: transform 0.1s linear; }
+.box { position: absolute; width: var(--sz); height: var(--sz); top: calc(var(--sz) / -2); left: calc(var(--sz) / -2); transform-style: preserve-3d; }
+
+/* 3D Walls */
+.wall { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; transform-origin: bottom center; transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1); }
+.wall-front { --t: translateZ(calc(var(--sz)/2)) rotateY(0deg); transform: var(--t); }
+.wall-back  { --t: translateZ(calc(var(--sz)/-2)) rotateY(180deg); transform: var(--t); }
+.wall-left  { --t: translateX(calc(var(--sz)/-2)) rotateY(-90deg); transform: var(--t); }
+.wall-right { --t: translateX(calc(var(--sz)/2)) rotateY(90deg); transform: var(--t); }
+.wall.open { transform: var(--t) rotateX(-90deg); }
+
+/* Solid Thickness for faces */
+.face-out { position: absolute; inset: 0; background: linear-gradient(135deg, #181818, #0a0a0a); transform: translateZ(1px); backface-visibility: hidden; border: 1px solid #333; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
+.face-in { position: absolute; inset: 0; transform: rotateY(180deg) translateZ(1px); backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px; box-sizing: border-box; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
+
+/* Solid Base */
+.base { position: absolute; width: 100%; height: 100%; transform: translateY(calc(var(--sz)/2)) rotateX(90deg); transform-style: preserve-3d; }
+.base-out { position: absolute; inset: 0; background: linear-gradient(135deg, #181818, #0a0a0a); transform: rotateX(180deg) translateZ(1px); backface-visibility: hidden; border: 1px solid #333; }
+.base-in { position: absolute; inset: 0; transform: translateZ(1px); backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
+
+/* Dark Romantic Themes for Inner Walls */
+.base-in { background: linear-gradient(135deg, #4a0e2e, #240515); }
+.wall-front .face-in { background: linear-gradient(135deg, #1f0b2e, #0e0416); }
+.wall-back .face-in { background: linear-gradient(135deg, #38041c, #1a020b); }
+.wall-left .face-in { background: linear-gradient(135deg, #2b0b23, #12040f); }
+.wall-right .face-in { background: linear-gradient(135deg, #180924, #08030d); }
+
+/* 3D Lid */
+.lid { position: absolute; width: var(--sz); height: var(--sz); transform-style: preserve-3d; transform: translateY(0); transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 1.2s; z-index: 20; cursor: pointer; }
+.lid-top { position: absolute; inset: -3px; background: linear-gradient(135deg, #181818, #0a0a0a); transform: translateY(calc(var(--sz)/-2)) rotateX(90deg) translateZ(15px); border: 1px solid #333; box-shadow: inset 0 0 20px rgba(0,0,0,0.9); transition: 0.3s; }
+.lid-skirt { position: absolute; background: #151515; height: 15px; top: 0; border: 1px solid #333; }
+.lid-skirt.front { width: calc(var(--sz) + 6px); transform: translateZ(calc(var(--sz)/2 + 3px)) translateY(-15px) translateX(-3px); }
+.lid-skirt.back { width: calc(var(--sz) + 6px); transform: translateZ(calc(var(--sz)/-2 - 3px)) rotateY(180deg) translateY(-15px) translateX(3px); }
+.lid-skirt.left { width: calc(var(--sz) + 6px); transform: translateX(calc(var(--sz)/-2 - 3px)) rotateY(-90deg) translateY(-15px) translateX(3px); }
+.lid-skirt.right { width: calc(var(--sz) + 6px); transform: translateX(calc(var(--sz)/2 + 3px)) rotateY(90deg) translateY(-15px) translateX(-3px); }
+.lid.open { transform: translateY(-300px) rotateX(25deg) rotateY(45deg); opacity: 0; pointer-events: none; }
+
+/* Lid Interaction Glow */
+.lid:not(.open) .lid-top { box-shadow: inset 0 0 20px rgba(255,77,109,0.5), 0 0 15px rgba(255,77,109,0.3); animation: lidPulse 1.5s infinite alternate; }
+@keyframes lidPulse { to { box-shadow: inset 0 0 40px rgba(255,77,109,0.9), 0 0 25px rgba(255,77,109,0.6); } }
+
+/* Flawless SVG Heart for Lid */
+.lid-heart { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 55px; height: 55px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6)); }
+
+/* Interactable Indicators (Glowing dashed border) */
+.interactable { position: relative; cursor: pointer; }
+.interactable::after {
+  content: ''; position: absolute; inset: -4px; border: 2px dashed #ff4d6d; border-radius: 6px;
+  animation: pulse-border 1.5s infinite; pointer-events: none; z-index: 100;
+}
+.origami-heart::after { inset: -8px; border-radius: 50%; } 
+.interactable.open::after, .interactable.clicked::after { display: none; }
+@keyframes pulse-border {
+  0% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.3; }
+}
+
+.wall-glow { position: absolute; inset: 0; box-shadow: inset 0 0 30px rgba(255,77,109,0.7); opacity: 0; transition: 0.5s; pointer-events: none; }
+.scene.lid-opened .wall:not(.open) .face-out .wall-glow { opacity: 1; animation: wallGlowPulse 1.2s infinite alternate; }
+@keyframes wallGlowPulse { from { opacity: 0.2; } to { opacity: 0.9; } }
+
+/* Inner Content UI */
+.polaroid { background: #f8f9fa; padding: 4px 4px 6px 4px; box-shadow: 0 6px 12px rgba(0,0,0,0.4); width: 80%; transform: rotate(-2deg); margin: 4px 0; border: 1px solid #ddd; box-sizing: border-box; }
+.polaroid img { width: 100%; height: 85px; object-fit: cover; background: #ccc; display: block; }
+.polaroid .caption { font-family: 'Dancing Script', cursive; text-align: center; color: #111; font-size: 0.85rem; margin-top: 4px; font-weight: bold;}
+
+.title-text { font-family: 'Dancing Script', cursive; color: #ffb3c6; font-size: 1.1rem; font-weight: bold; text-shadow: 0 1px 3px rgba(0,0,0,0.8); margin: 4px 0; }
+
+/* Envelope with Scrollable Letter */
+.env-wrapper { width: 85%; height: 55px; position: relative; margin: auto 0; perspective: 600px; }
+.env-back { position: absolute; inset: 0; background: #a67c52; border-radius: 4px; z-index: 1; }
+.env-front { position: absolute; inset: 0; background: linear-gradient(135deg, #c4956a, #b3855a); clip-path: polygon(0 0, 50% 50%, 100% 0, 100% 100%, 0 100%); border-radius: 4px; z-index: 4; }
+.env-flap { position: absolute; top: 0; left: 0; width: 100%; height: 55%; background: #c4956a; clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: top; z-index: 5; transition: transform 0.6s, z-index 0s 0.3s; }
+.env-wrapper.open .env-flap { transform: rotateX(180deg); z-index: 2; }
+.env-letter {
+  position: absolute; left: 4%; right: 4%; top: 5%; bottom: 5%;
+  background: #fff; padding: 4px; z-index: 3;
+  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  border-radius: 2px; box-sizing: border-box;
+}
+.env-wrapper.open .env-letter { transform: translateY(-34px); pointer-events: auto; }
+.env-scroll-content {
+  height: 100%; overflow-y: auto; padding: 4px; color: #333; box-sizing: border-box;
+  font-family: 'Dancing Script', cursive; font-size: 0.65rem; line-height: 1.4; text-align: center;
+}
+.env-scroll-content::-webkit-scrollbar { width: 4px; }
+.env-scroll-content::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+.env-scroll-content::-webkit-scrollbar-thumb { background: #ff4d6d; border-radius: 4px; }
+
+/* Origami Book Card */
+.book-card { width: 85%; height: 40px; position: relative; perspective: 600px; margin: 5px auto; }
+.bc-right { position: absolute; right: 0; width: 50%; height: 100%; background: #f8f9fa; border-radius: 0 4px 4px 0; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; text-align: center; color: #222; padding: 4px; box-shadow: 2px 2px 6px rgba(0,0,0,0.4); box-sizing: border-box; }
+.bc-left { position: absolute; left: 0; width: 50%; height: 100%; transform-origin: right center; transform-style: preserve-3d; transition: transform 0.8s; z-index: 2; }
+.book-card.open .bc-left { transform: rotateY(-180deg); }
+.bc-left-front, .bc-left-back { position: absolute; inset: 0; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 4px 0 0 4px; box-shadow: -2px 2px 6px rgba(0,0,0,0.4); }
+.bc-left-front { background: linear-gradient(135deg, #ff4d6d, #c9184a); font-size: 1rem; }
+.bc-left-back { background: #f8f9fa; transform: rotateY(180deg); border-radius: 0 4px 4px 0; font-size: 0.5rem; text-align: center; color: #c9184a; font-weight: bold; padding: 4px; box-sizing: border-box; font-family: 'Dancing Script', cursive; }
+
+/* Origami Hearts (Corners) */
+.origami-heart { width: 36px; height: 36px; position: absolute; perspective: 400px; z-index: 10; cursor: pointer; }
+.origami-heart.tl { top: 8px; left: 8px; }
+.origami-heart.tr { top: 8px; right: 8px; }
+.origami-heart.bl { bottom: 8px; left: 8px; }
+.origami-heart.br { bottom: 8px; right: 8px; }
+.oh-left, .oh-right { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.oh-left { clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%); }
+.oh-right { clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%); transform-origin: 50% 50%; }
+.origami-heart:not(.open) .oh-right { transform: rotateY(-179deg); } /* Folded state */
+.heart-shape { position: absolute; width: 20px; height: 20px; top: 12px; left: 8px; background: #ff4d6d; transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+.heart-shape::before, .heart-shape::after { content: ''; position: absolute; width: 20px; height: 20px; background: inherit; border-radius: 50%; }
+.heart-shape::before { top: -10px; left: 0; }
+.heart-shape::after { top: 0; left: 10px; }
+
+/* Calendar */
+.calendar { width: 75%; background: #f8f9fa; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.4); padding: 4px; margin-top: auto; margin-bottom: 2px; border: 1px solid #ddd; box-sizing: border-box; }
+.cal-title { text-align: center; font-size: 0.5rem; border-bottom: 1px solid #ccc; padding-bottom: 2px; font-weight: bold; color: #111; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.35rem; margin-top: 3px; gap: 1px; color: #333; }
+.cal-grid div { padding: 1px 0; }
+.cal-grid .highlight { background: #ff4d6d; color: #fff; border-radius: 50%; font-weight: bold; position: relative; }
+.cal-grid .highlight::after { content: '❤️'; position: absolute; top: -5px; right: -5px; font-size: 0.4rem; animation: floatHeart 2s infinite alternate; }
+@keyframes floatHeart { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+.date-text { font-family: 'Dancing Script', cursive; color: #ffb3c6; font-size: 1rem; font-weight: bold; margin: 2px 0; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+.streak-text { font-family: 'Playfair Display', serif; font-size: 0.55rem; color: #fff; text-align: center; margin-bottom: auto; background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,105,180,0.4); line-height: 1.3; box-shadow: 0 4px 8px rgba(0,0,0,0.4); box-sizing: border-box; }
+
+#main-title { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); font-family: 'Dancing Script', cursive; font-size: 2.5rem; color: #fff; text-shadow: 0 0 15px rgba(255,77,109,0.8); opacity: 0; transition: opacity 1.5s; z-index: 500; pointer-events: none; white-space: nowrap; }
+.falling-heart { position: fixed; top: -50px; font-size: 1.5rem; animation: fall linear forwards; pointer-events: none; z-index: 999; }
+@keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+
+@media(max-width: 500px) {
+  .polaroid img { height: 65px; }
+  .env-scroll-content { font-size: 0.55rem; }
+  #main-title { font-size: 2rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="main-title">Para mi Eimy ❤️</div>
+<audio id="music" loop preload="auto"><source src="musica.mp3" type="audio/mpeg"></audio>
+
+<div class="scene">
+  <div class="camera" id="camera">
+    <div class="box">
+      
+      <!-- Base (Centro) -->
+      <div class="base">
+        <div class="base-out"></div>
+        <div class="base-in">
+          <div class="polaroid" style="margin: auto; width: 70%; transform: rotate(0deg);">
+            <img src="foto4.jpg" alt="Foto Central" onerror="this.style.background='#ccc'">
+            <div class="caption">Te amo Eimy ❤️</div>
+          </div>
+          
+          <!-- Corazones Origami en las esquinas -->
+          <div class="origami-heart tl interactable" onclick="this.classList.toggle('open')"><div class="oh-left"><div class="heart-shape"></div></div><div class="oh-right"><div class="heart-shape"></div></div></div>
+          <div class="origami-heart tr interactable" onclick="this.classList.toggle('open')"><div class="oh-left"><div class="heart-shape"></div></div><div class="oh-right"><div class="heart-shape"></div></div></div>
+          <div class="origami-heart bl interactable" onclick="this.classList.toggle('open')"><div class="oh-left"><div class="heart-shape"></div></div><div class="oh-right"><div class="heart-shape"></div></div></div>
+          <div class="origami-heart br interactable" onclick="this.classList.toggle('open')"><div class="oh-left"><div class="heart-shape"></div></div><div class="oh-right"><div class="heart-shape"></div></div></div>
+        </div>
+      </div>
+      
+      <!-- Panel Frontal -->
+      <div class="wall wall-front">
+        <div class="face-out"><div class="wall-glow"></div></div>
+        <div class="face-in">
+          <div class="polaroid" style="margin-top: auto; margin-bottom: 5px;">
+            <img src="foto1.jpg" alt="Nosotros" onerror="this.style.background='#ccc'">
+            <div class="caption">Nosotros ❤️</div>
+          </div>
+          <div class="title-text" style="margin-bottom: auto;">Te quiero mucho</div>
+        </div>
+      </div>
+      
+      <!-- Panel Trasero -->
+      <div class="wall wall-back">
+        <div class="face-out"><div class="wall-glow"></div></div>
+        <div class="face-in">
+          <div class="calendar">
+            <div class="cal-title">Agosto 2026</div>
+            <div class="cal-grid" id="calGrid"></div>
+          </div>
+          <div class="date-text">01/08/2026</div>
+          <div class="streak-text">
+            Racha de meses: 1 ✔️<br>¡Vamos por infinitos más! 🚀
+          </div>
+        </div>
+      </div>
+      
+      <!-- Panel Izquierdo -->
+      <div class="wall wall-left">
+        <div class="face-out"><div class="wall-glow"></div></div>
+        <div class="face-in">
+          <div class="polaroid" style="margin-top: auto;">
+            <img src="foto2.jpg" alt="Mi niña" onerror="this.style.background='#ccc'">
+            <div class="caption">Mi niña hermosa</div>
+          </div>
+          <div class="book-card interactable" style="margin-bottom: auto;" onclick="this.classList.add('open')">
+            <div class="bc-right">Gracias por los bonitos momentos ✨</div>
+            <div class="bc-left">
+              <div class="bc-left-front">💕</div>
+              <div class="bc-left-back">Te amo</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Panel Derecho (Carta) -->
+      <div class="wall wall-right">
+        <div class="face-out"><div class="wall-glow"></div></div>
+        <div class="face-in">
+          <div class="title-text" style="font-size: 1rem; margin-top: auto; margin-bottom: 5px;">Para ti, mi amor 💌</div>
+          <div class="env-wrapper interactable" style="margin-bottom: auto;" onclick="this.classList.add('open')">
+            <div class="env-back"></div>
+            <div class="env-letter">
+              <div class="env-scroll-content">
+                Mira mi amor, esta es mi forma de regalarte algo similar.<br>
+                No soy bueno con las manualidades pero con la programación es otra cosa amorr 😄<br><br>
+                Ya llevamos un mes, ¡vamos por infinitos meses más amorrr! Racha de meses jajjasjaj 🚀<br><br>
+                Te quiero mucho mi amor, gracias por todos los bonitos momentos que pasamos juntos y las besuqueadas también amorrr ajajsjsaj 😘<br><br>
+                ¡Te quieroo muchooo mi niña hermosaaaaa! 💕
+              </div>
+            </div>
+            <div class="env-front"></div>
+            <div class="env-flap"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tapa (Lid) -->
+      <div class="lid" id="lid">
+        <div class="lid-top">
+          <svg class="lid-heart" viewBox="0 0 32 29.6">
+            <path d="M23.6,0c-3.4,0-6.3,2.7-7.6,5.6C14.7,2.7,11.8,0,8.4,0C3.8,0,0,3.8,0,8.4c0,9.4,9.5,11.9,16,21.2c6.1-9.3,16-12.1,16-21.2C32,3.8,28.2,0,23.6,0z" fill="#ff4d6d"/>
+          </svg>
+        </div>
+        <div class="lid-skirt front"></div>
+        <div class="lid-skirt back"></div>
+        <div class="lid-skirt left"></div>
+        <div class="lid-skirt right"></div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<script>
+// Generar Calendario
+const calGrid = document.getElementById('calGrid');
+let calHTML = '<div>D</div><div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div>';
+for(let i=0; i<6; i++) calHTML += '<div></div>'; 
+for(let i=1; i<=31; i++) {
+  if (i === 1) calHTML += `<div class="highlight">${i}</div>`;
+  else calHTML += `<div>${i}</div>`;
+}
+calGrid.innerHTML = calHTML;
+
+// Lógica 3D y Controles
+const camera = document.getElementById('camera');
+const scene = document.querySelector('.scene');
+let isDragging = false, startX, startY;
+let currentRX = -30, currentRY = 40;
+let currentTranslateZ = 0; 
+let moved = false;
+let lidOpen = false;
+let wallsOpened = 0;
+
+function render() {
+  camera.style.transform = `translateZ(${currentTranslateZ}px) rotateX(${currentRX}deg) rotateY(${currentRY}deg)`;
+}
+render();
+
+// Rotación Automática Inicial
+let autoRotate = true;
+function autoSpin() {
+  if (autoRotate) {
+    currentRY += 0.15;
+    render();
+    requestAnimationFrame(autoSpin);
+  }
+}
+autoSpin();
+
+document.addEventListener('pointerdown', e => {
+  if (e.target.closest('.env-scroll-content')) return; // No mover cámara al hacer scroll en carta
+  
+  isDragging = true; moved = false;
+  startX = e.clientX; startY = e.clientY;
+  autoRotate = false;
+});
+document.addEventListener('pointermove', e => {
+  if (!isDragging) return;
+  const dx = e.clientX - startX;
+  const dy = e.clientY - startY;
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+  if (moved) {
+    let speed = e.pointerType === 'touch' ? 0.6 : 0.4;
+    currentRY += dx * speed;
+    currentRX -= dy * speed;
+    currentRX = Math.max(-85, Math.min(85, currentRX)); 
+    startX = e.clientX; startY = e.clientY;
+    render();
+  }
+});
+
+// Zoom con rueda de ratón 
+document.addEventListener('wheel', e => {
+  if (e.target.closest('.env-scroll-content')) return; 
+  currentTranslateZ += e.deltaY * -0.6;
+  currentTranslateZ = Math.max(-600, Math.min(currentTranslateZ, 800));
+  render();
+});
+
+// Zoom pellizcando en celular
+let initDist = 0;
+document.addEventListener('touchstart', e => {
+  if (e.target.closest('.env-scroll-content')) return;
+  if(e.touches.length === 2) {
+    initDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    autoRotate = false;
+  }
+});
+document.addEventListener('touchmove', e => {
+  if (e.target.closest('.env-scroll-content')) return;
+  if(e.touches.length === 2 && initDist > 0) {
+    let currDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    let delta = currDist - initDist;
+    currentTranslateZ += delta * 2;
+    currentTranslateZ = Math.max(-600, Math.min(currentTranslateZ, 800));
+    initDist = currDist;
+    render();
+  }
+});
+
+document.addEventListener('pointerup', e => {
+  isDragging = false;
+  if (moved) return;
+  
+  const target = e.target;
+  
+  // Abrir Tapa
+  const lid = target.closest('#lid');
+  if (lid && !lidOpen) {
+    lid.classList.add('open');
+    lidOpen = true;
+    scene.classList.add('lid-opened');
+    document.getElementById('music').play().catch(()=>{});
+    // Acomodar cámara para vista superior perfecta
+    currentRX = -50; currentRY = 0; currentTranslateZ = 150;
+    camera.style.transition = 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+    render();
+    setTimeout(() => camera.style.transition = 'transform 0.1s linear', 1200);
+    return;
+  }
+  
+  // Abrir Paredes
+  const wall = target.closest('.wall');
+  if (wall && lidOpen && !wall.classList.contains('open')) {
+    if (target.closest('.interactable')) return; 
+    wall.classList.add('open');
+    wallsOpened++;
+    if (wallsOpened === 4) {
+      setTimeout(() => {
+        document.getElementById('main-title').style.opacity = 1;
+        setInterval(() => {
+          const heart = document.createElement('div');
+          heart.className = 'falling-heart';
+          heart.innerText = ['❤️','💖','💕','✨'][Math.floor(Math.random()*4)];
+          heart.style.left = Math.random() * 100 + 'vw';
+          heart.style.animationDuration = (Math.random() * 2 + 3) + 's';
+          document.body.appendChild(heart);
+          setTimeout(() => heart.remove(), 5000);
+        }, 250);
+      }, 1000);
+    }
+  }
+});
+</script>
+</body>
+</html>
